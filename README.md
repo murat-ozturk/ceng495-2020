@@ -1,12 +1,12 @@
 # CENG495 HW1
 Programming Language Used: Java
 
-Vaadin 8 framework is used for UI components. Google zxing library is used to create and read QR files. Upload component is a custom component for Vaadin framework.(Component github link: https://github.com/ssindelar/vaadin-droporchoose-upload)
+Vaadin 8 framework is used for UI components. ISPark API is used to retrieve data. Open Layers API is used to show park data on map.
 
 URL of the app: https://webapp-190321155457.azurewebsites.net/
 
 Site contains 2 layout:
 
--Left layout is used to create QR image. Enter the data of the QR, select code color and background color and click "Create" button to create image.
+-Top layout is used to create select district and park. When these 2 are selected, available space is updated from API.
 
--Right layout is composed of an upload component and a button. Drop a file to upload component or click "choose a file" button to upload a file. Then click "Read QR" button to see the data. This will open up a window that shows the data of QR. After user clicks "Read QR" button, uploaded image read and then deleted from the file system.
+-Bottom layout is used to show the location of the selected park on map.
