@@ -15,7 +15,7 @@ Classes:
 
 -MainUI:
 
-  This is class contains UI elements. 2 Comboboxes, 1 TextField and 1 Label. Comboboxes list districts and park names. When both are selected, TextField fills up with the available space data and the location of the selected park is placed inside the label as HTML content.
+  This class contains UI elements. 2 Comboboxes, 1 TextField and 1 Label. Comboboxes list districts and park names. When both are selected, TextField fills up with the available space data and the location of the selected park is placed inside the label as HTML content.
   
 -ParkModel:
 
