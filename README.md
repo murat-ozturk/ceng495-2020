@@ -3,7 +3,7 @@ Programming Language Used: Java
 
 Vaadin 8 framework is used for UI components. ISPark API is used to retrieve data. Open Layers API is used to show park data on map.
 
-URL of the app: https://webapp-190321155457.azurewebsites.net/
+URL of the app: https://e1881770.herokuapp.com/
 
 Site contains 2 layout:
 
