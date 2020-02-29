@@ -12,7 +12,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.vaadin.leif.headertags.Link;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -25,8 +24,8 @@ import com.vaadin.event.selection.SingleSelectionEvent;
 import com.vaadin.event.selection.SingleSelectionListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
-import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.server.Sizeable.Unit;
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.HorizontalLayout;
@@ -67,12 +66,13 @@ public class MainUI extends UI {
 
 		ComboBox<ParkModel> cbParks = new ComboBox<ParkModel>("Select Park");
 		cbParks.setItemCaptionGenerator(e -> e.getParkName());
+		cbParks.setWidth(400, Unit.PIXELS);
 
 		cbDistrict.addSelectionListener(new SingleSelectionListener<String>() {
 
 			@Override
 			public void selectionChange(SingleSelectionEvent<String> event) {
-				if(cbParks.getValue() != null) {
+				if (cbParks.getValue() != null) {
 					cbParks.setValue(null);
 					tfAvailableSpace.setValue("");
 					mapLayout.removeAllComponents();
@@ -92,25 +92,32 @@ public class MainUI extends UI {
 
 			@Override
 			public void selectionChange(SingleSelectionEvent<ParkModel> event) {
-				if(cbParks.getValue() != null) {
-					tfAvailableSpace.setValue(String.valueOf(cbParks.getValue().getAvailableSpace()));
-					mapLayout.removeAllComponents();
-					lblMap = new Label(
-							"<div id=\"map\" class=\"map\" style=\"width: 100%; height: 400px;\"></div>",
-							ContentMode.HTML);
-					lblMap.setWidth(100, Unit.PERCENTAGE);
-					lblMap.setHeight(400, Unit.PIXELS);
-					mapLayout.addComponent(lblMap);
+				if (cbParks.getValue() != null) {
+					try {
+						ParkData parkData = getParkData(cbParks.getValue().getParkID());
+						
+						tfAvailableSpace.setValue(String.valueOf(parkData.getAvailableSpace()));
+						mapLayout.removeAllComponents();
+						lblMap = new Label("<div id=\"map\" class=\"map\" style=\"width: 100%; height: 400px;\"></div>",
+								ContentMode.HTML);
+						lblMap.setWidth(100, Unit.PERCENTAGE);
+						lblMap.setHeight(400, Unit.PIXELS);
+						mapLayout.addComponent(lblMap);
+
+						StringBuilder sbScript = new StringBuilder();
+						sbScript.append(
+								"var map = new ol.Map({ target: 'map', layers: [ new ol.layer.Tile({ source: new ol.source.OSM() }) ], view: new ol.View({ center: ol.proj.fromLonLat([");
+						sbScript.append(parkData.getLongitude());
+						sbScript.append(",");
+						sbScript.append(parkData.getLatitude());
+						sbScript.append("]), zoom: 18 })});");
+						com.vaadin.ui.JavaScript.getCurrent().execute(sbScript.toString());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					
-					StringBuilder sbScript = new StringBuilder();
-					sbScript.append("var map = new ol.Map({ target: 'map', layers: [ new ol.layer.Tile({ source: new ol.source.OSM() }) ], view: new ol.View({ center: ol.proj.fromLonLat([");
-					sbScript.append(cbParks.getValue().getLongitude());
-					sbScript.append(",");
-					sbScript.append(cbParks.getValue().getLatitude());
-					sbScript.append("]), zoom: 18 })});");
-					com.vaadin.ui.JavaScript.getCurrent().execute(sbScript.toString());
 				}
-				
+
 			}
 		});
 
@@ -156,6 +163,34 @@ public class MainUI extends UI {
 		});
 
 	}
+	
+	private ParkData getParkData(long parkId) throws Exception {
+		
+		StringBuilder sbURL = new StringBuilder();
+		sbURL.append("https://api.ibb.gov.tr/ispark/ParkDetay?id=");
+		sbURL.append(parkId);
+
+		HttpGet httpGet = new HttpGet(sbURL.toString());
+
+		CloseableHttpClient client = HttpClientBuilder.create().build();
+
+		CloseableHttpResponse response = client.execute(httpGet);
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		response.getEntity().writeTo(out);
+
+		response.close();
+		client.close();
+
+		String data = out.toString();
+
+		JsonParser parser = new JsonParser();
+		JsonElement jsonTree = parser.parse(data);
+		JsonObject jsonObject = jsonTree.getAsJsonObject();
+
+		return new ParkData(jsonObject);
+
+	}
 
 	@WebServlet(value = "/*", asyncSupported = true)
 	@VaadinServletConfiguration(productionMode = true, ui = MainUI.class, heartbeatInterval = 30, closeIdleSessions = false)
@@ -163,4 +198,42 @@ public class MainUI extends UI {
 
 	}
 
+}
+
+class ParkData {
+	
+	private double latitude;
+	private double longitude;
+	private int availableSpace;
+	
+	public ParkData(JsonObject jsonObject) {
+		this.latitude = Double.parseDouble(jsonObject.get("Latitude").getAsString());
+		this.longitude = Double.parseDouble(jsonObject.get("Longitude").getAsString());
+		this.availableSpace = jsonObject.get("BosKapasite").getAsInt();
+	}
+
+	public double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(double latitude) {
+		this.latitude = latitude;
+	}
+
+	public double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(double longitude) {
+		this.longitude = longitude;
+	}
+
+	public int getAvailableSpace() {
+		return availableSpace;
+	}
+
+	public void setAvailableSpace(int availableSpace) {
+		this.availableSpace = availableSpace;
+	}
+	
 }
